@@ -7,7 +7,7 @@ This repository contains a serverless EMI calculator built with AWS Lambda and A
 
 ## Documentation
 
-- [Installation and Usage](Serverless_EMI_Calculator_using_AWS_Lambda_and_API_Gateway.md)
+- [Installation and Usage](Serverless_EMI_Calculator_using_AWS_Lambda_and_API_Gateway.pdf)
 
 
 ## Prerequisites
