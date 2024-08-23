@@ -1,46 +1,135 @@
-## Serverless Application Deployment Using AWS Lambda and API Gateway
 
-This repository contains code for a serverless application deployed using AWS Lambda and AWS API Gateway. The application's backend is built using Node.js and utilizes AWS DynamoDB for data storage.
+# Serverless EMI Calculator using AWS Lambda and API Gateway
 
-### Deployment Steps
+## Overview
 
-1. **Packaging Code in AWS S3**
+This repository contains a serverless EMI calculator built with AWS Lambda and API Gateway. The application is designed to calculate the Equated Monthly Installment (EMI) based on principal, interest rate, and time period. It uses Python for the Lambda function and integrates with API Gateway to expose the functionality via HTTP requests.
 
-   The code is packaged and stored in an AWS S3 bucket to facilitate deployment. This ensures that the Lambda functions have access to the latest version of the codebase.
+## Documentation
 
-2. **Managing DynamoDB Tables**
+- [Installation and Usage](Serverless_EMI_Calculator_using_AWS_Lambda_and_API_Gateway.md)
 
-   AWS DynamoDB is used as the database for this application. The necessary tables are created and managed within DynamoDB to store and retrieve data as required by the application.
 
-3. **AWS CloudFormation Stack**
+## Prerequisites
 
-   AWS CloudFormation is used to manage the infrastructure as code. A CloudFormation stack is created to integrate the AWS Lambda functions and AWS API Gateway, ensuring seamless communication between the frontend and backend components of the application.
+- AWS Account
+- Basic understanding of AWS Lambda and API Gateway
+- Python 3.9 runtime environment
 
-4. **Deploying Node.js API with AWS Lambda and API Gateway**
+## Steps to Deploy
 
-   The Node.js API is deployed as serverless AWS Lambda functions, which are triggered by API Gateway events. This architecture allows for scalable and cost-effective execution of the backend logic.
+### Step 1: Create AWS Lambda Function
 
-5. **Testing API Endpoints**
+1. **Login** to the [AWS Management Console](https://aws.amazon.com/console/).
+2. **Search** for **Lambda** in the service bar.
+3. **Create** a new Lambda function:
+   - **Function Name:** `lambda-emi-calc`
+   - **Runtime:** Python 3.9
+   - Click **Create Function**.
 
-   Production-level testing of API endpoints is conducted using Postman. This involves sending various HTTP requests to the API endpoints to verify their functionality and ensure they meet the requirements of the application.
+### Step 2: Add Python Code
 
-### Repository Structure
+1. **Clear** existing code in the Lambda function editor.
+2. **Paste** the following Python code:
 
-- **`/src`**: Contains the source code for the Node.js API functions.
-- **`/cloudformation`**: Includes CloudFormation templates for infrastructure provisioning.
-- **`/tests`**: Contains Postman collections for testing API endpoints.
-- **`/docs`**: Documentation and README files.
+    ```python
+    import json
+    print('Loading function... Lambda EMI calculator using API Gateway')
 
-### Getting Started
+    def lambda_handler(event, context):
+        # 1. Parse out query string params
+        principal = int(event['queryStringParameters']['p'])
+        rate = float(event['queryStringParameters']['r'])
+        time = int(event['queryStringParameters']['t'])
+        emi = emi_calculator(principal, rate, time)
+        # 2. Construct the body of the response object
+        transactionResponse = {
+            'p': principal,
+            'r': rate,
+            't': time,
+            'emi': emi
+        }
 
-To deploy and test the serverless application locally, follow these steps:
+        # 3. Construct http response object
+        responseObject = {
+            'statusCode': 200,
+            'headers': {
+                'Content-Type': 'application/json'
+            },
+            'body': json.dumps(transactionResponse)
+        }
+        # 4. Return the response object
+        return responseObject
 
-1. Clone this repository to your local machine.
-2. Install the necessary dependencies for the Node.js API functions.
-3. Configure AWS credentials and set up the required AWS services (S3, DynamoDB, CloudFormation, Lambda, API Gateway).
-4. Deploy the CloudFormation stack using the provided templates.
-5. Use Postman to test the API endpoints and verify the application's functionality.
+    def emi_calculator(p, r, t):
+        r = r / (12 * 100)  # one month interest
+        t = t * 12  # one month period
+        emi = (p * r * pow(1 + r, t)) / (pow(1 + r, t) - 1)
+        return emi
+    ```
 
-### Contributing
+3. **Deploy** the Lambda function.
 
-Contributions to this project are welcome! If you encounter any issues or have suggestions for improvements, please open an issue or submit a pull request.
+### Step 3: Test the Lambda Function
+
+1. Configure a **test event** with the following input:
+
+    ```json
+    {  
+      "queryStringParameters": {  
+        "p": 10000,  
+        "r": 2.5,  
+        "t": 5  
+      } 
+    }
+    ```
+
+2. **Run** the test to ensure there are no errors and the output is correct.
+
+### Step 4: Set Up API Gateway
+
+1. **Search** for **API Gateway** in the service bar.
+2. **Create** a new API Gateway:
+   - **API Name:** `EmiCalcApi`
+   - **Description:** `EmiCalcApi`
+   - **Endpoint Type:** Regional
+   - Click **Create API**.
+
+3. **Create a Resource**:
+   - **Resource Name:** `emi`
+   - Click **Create Resource**.
+
+4. **Create a Method**:
+   - **Method Type:** GET
+   - **Integration Type:** Lambda Function
+   - **Lambda Proxy Integration:** Enabled
+   - Select the Lambda function `lambda-emi-calc`.
+   - Click **Create Method**.
+
+### Step 5: Deploy the API
+
+1. Click **Deploy API**.
+2. **Stage Name:** `dev`
+   - **Deployment Description:** `dev`
+   - Click **Deploy**.
+
+3. Go to the **Stage** section and click **Edit**.
+4. **Update** parameters as needed:
+   - **Rate (r):** Set to `5.8`
+   - **Time (t):** Set to `10`
+
+5. **Copy** the **Invoke URL** from the stage details and append the following query string:
+
+    ```
+    /emi?p=10000&r=5.8&t=10
+    ```
+
+6. **Paste** the complete URL into your browser to get the EMI result.
+
+## Output
+
+The Lambda function will return a JSON response with the EMI calculation, including the principal, rate, time, and calculated EMI.
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
